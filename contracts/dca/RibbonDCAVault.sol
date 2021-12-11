@@ -140,23 +140,23 @@ contract RibbonDCAVault is RibbonVaultBase, RibbonDCAVaultStorage {
      * @param numShares is the number of shares to withdraw
      */
     function initiateWithdraw(uint256 numShares) public override {
-        require(numShares > 0, "!numShares");
+        require(numShares != 0, "!numShares");
 
         // We do a max redeem before initiating a withdrawal
         // But we check if they must first have unredeemed shares
         if (
-            depositReceipts[msg.sender].amount > 0 ||
-            depositReceipts[msg.sender].unredeemedShares > 0
+            depositReceipts[msg.sender].amount != 0 ||
+            depositReceipts[msg.sender].unredeemedShares != 0
         ) {
             _redeem(0, true);
         }
 
         // Calculate shares to withdraw from the dca vault
         uint256 shareBalance = balanceOf(msg.sender);
-        uint256 dcaWithdrawShares = shareBalance > 0
+        uint256 dcaWithdrawShares = shareBalance != 0
             ? dividendOf(msg.sender).mul(numShares).div(shareBalance)
             : 0;
-        if (dcaWithdrawShares > 0) {
+        if (dcaWithdrawShares != 0) {
             // Initiate withdrawal from the dcaVault
             dcaVault.initiateWithdraw(uint128(dcaWithdrawShares));
             dcaVaultWithdrawals[msg.sender] = dcaVaultWithdrawals[msg.sender]
@@ -205,7 +205,7 @@ contract RibbonDCAVault is RibbonVaultBase, RibbonDCAVaultStorage {
         uint256 withdrawalRound = withdrawal.round;
 
         // This checks if there is a withdrawal
-        require(withdrawalShares > 0, "Not initiated");
+        require(withdrawalShares != 0, "Not initiated");
 
         require(withdrawalRound < vaultState.round, "Round not closed");
 
@@ -232,7 +232,7 @@ contract RibbonDCAVault is RibbonVaultBase, RibbonDCAVaultStorage {
 
         _burn(address(this), withdrawalShares);
 
-        require(withdrawAmount > 0, "!withdrawAmount");
+        require(withdrawAmount != 0, "!withdrawAmount");
         transferAsset(msg.sender, withdrawAmount);
 
         _withdrawVaultAssets();
@@ -266,7 +266,7 @@ contract RibbonDCAVault is RibbonVaultBase, RibbonDCAVaultStorage {
         (, uint128 dcaShares) = dcaVault.withdrawals(msg.sender);
         uint256 dcaVaultWithdrawal = dcaVaultWithdrawals[msg.sender];
         dcaVaultWithdrawals[msg.sender] = 0;
-        if (dcaShares > 0 && dcaVaultWithdrawal > 0) {
+        if (dcaShares != 0 && dcaVaultWithdrawal != 0) {
             // Complete the withdrawal from the DCA Vault
             uint256 dcaAssetBalance;
             if (dcaVaultAsset == WETH) {
@@ -283,14 +283,14 @@ contract RibbonDCAVault is RibbonVaultBase, RibbonDCAVaultStorage {
                     IERC20(dcaVaultAsset).balanceOf(address(this)) -
                     dcaAssetBalance;
             }
-            if (dcaAssetBalance > 0) {
+            if (dcaAssetBalance != 0) {
                 // Transfer withdrawn assets to the user
                 uint256 userAssets = dcaVaultWithdrawal
                     .mul(dcaAssetBalance)
                     .div(dcaShares);
                 transferAsset(msg.sender, userAssets);
                 uint256 remainingAssets = dcaAssetBalance.sub(userAssets);
-                if (remainingAssets > 0) {
+                if (remainingAssets != 0) {
                     // Redeposit any extra amounts withdrawn
                     IERC20(dcaVaultAsset).safeApprove(
                         address(dcaVault),
@@ -365,7 +365,7 @@ contract RibbonDCAVault is RibbonVaultBase, RibbonDCAVaultStorage {
                 managementFee
             );
 
-        if (vaultFee > 0) {
+        if (vaultFee != 0) {
             transferAsset(payable(feeRecipient), vaultFee);
             emit CollectVaultFees(
                 performanceFeeInAsset,
@@ -397,7 +397,7 @@ contract RibbonDCAVault is RibbonVaultBase, RibbonDCAVaultStorage {
                 withdrawShares,
                 yieldVault.maxWithdrawableShares()
             );
-            if (withdrawableShares > 0) {
+            if (withdrawableShares != 0) {
                 uint256 assetBalance = IERC20(vaultParams.asset).balanceOf(
                     address(this)
                 );
@@ -428,7 +428,7 @@ contract RibbonDCAVault is RibbonVaultBase, RibbonDCAVaultStorage {
             UNISWAP_ROUTER,
             swapPath
         );
-        if (receivedAmount > 0) {
+        if (receivedAmount != 0) {
             uint256 vaultShares = dcaVault.shares(address(this));
             // Deposit the dca vault asset into the dca vault
             IERC20(dcaVaultAsset).safeApprove(
